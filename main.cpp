@@ -351,13 +351,16 @@ int rejestracja (vector <uzytkownik> &uzytkownicy, int iloscUzytkownikow) {
     int i=0;
     while (i<iloscUzytkownikow) {
         if (uzytkownicy[i].nazwaUzytkownika == nazwa) {
-            cout << "Taki u\276ytkownik ju\276 istnieje. Podaj inn\245 nazw\251 u\276ytkownika: ";
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),12);
+            cout << "Taki u\276ytkownik ju\276 istnieje" << endl;
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),15);
+            cout << "Podaj inn\245 nazw\251 u\276ytkownika: ";
             cin >> nazwa;
             i=0;
         } else
             i++;
     }
-    cout << "Podaj has\210o: ";
+    cout << endl << "Podaj has\210o: ";
     cin >> haslo;
 
     uzytkownicy.push_back(uzytkownik());
@@ -381,7 +384,7 @@ int rejestracja (vector <uzytkownik> &uzytkownicy, int iloscUzytkownikow) {
     }
     cout << endl << "Konto zosta\210o za\210o\276one!" << endl;
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),11);
-    cout << "Czas uzupe\210ni\206 Twoj\245 now\245 KSI\244\275K\250 ADRESOW\244" << endl << endl;
+    cout << "Teraz mo\276esz si\251 ZALOGOWA\217" << endl << endl;
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),15);
     system("pause");
 
@@ -421,6 +424,79 @@ int pobierzUzytkownikow(vector <uzytkownik> &uzytkownicy) {
 }
 
 
+int logowanie (vector <uzytkownik> &uzytkownicy, int iloscUzytkownikow) {
+    system("cls");
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),14);
+    cout << endl << "  *** LOGOWANIE ***" << endl;
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),15);
+
+    string nazwa, haslo;
+    cout << endl << "Podaj login: ";
+    cin >> nazwa;
+
+    int i = 0;
+    while (i < iloscUzytkownikow) {
+        if (uzytkownicy[i].nazwaUzytkownika == nazwa) {
+            for (int proby=1; proby<4; proby++) {
+                cout << "Podaj has\210o (pr\242ba nr " << proby << "): ";
+                cin >> haslo;
+                if (uzytkownicy[i].haslo == haslo) {
+                    cout << endl << "Zalogowa\210e\230 si\251!" << endl;
+                    Sleep(2000);
+                    return uzytkownicy[i].idUzytkownika;
+                }
+            }
+            cout << endl << "B\210\251dne has\210o!" << "\a" << endl;
+            cout << "Poczekaj 10 sekund przed kolejn\245 prob\245." << endl;
+            Sleep(10000);
+            return 0;
+        }
+        i++;
+    }
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),12);
+    cout << "U\276ytkownik z takim loginem nie zosta\210 jeszcze zarejestrowany" << endl;
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),15);
+    Sleep(2000);
+    return 0;
+}
+
+
+void zapiszHasloDoPliku (vector <uzytkownik> &uzytkownicy, int iloscUzytkownikow) {
+    DeleteFile("Uzytkownicy.txt");
+    fstream plik;
+
+    plik.open("Uzytkownicy.txt", ios::out | ios::app);
+    if (plik.good() == true) {
+        for (int i=0; i<iloscUzytkownikow; i++) {
+            plik << uzytkownicy[i].idUzytkownika << "|";
+            plik << uzytkownicy[i].nazwaUzytkownika << "|";
+            plik << uzytkownicy[i].haslo << "|" << endl;
+        }
+        plik.close();
+    }
+}
+
+
+void zmianaHasla(vector <uzytkownik> &uzytkownicy, int iloscUzytkownikow, int idZalogowanegoUzytkownika) {
+    system("cls");
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),14);
+    cout << endl << "  *** ZMIANA HAS\235A ***" << endl;
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),15);
+
+    string haslo;
+    cout << endl << "Podaj nowe has\210o: ";
+    cin >> haslo;
+
+    for (int i=0; i<iloscUzytkownikow; i++) {
+        if (uzytkownicy[i].idUzytkownika == idZalogowanegoUzytkownika) {
+            uzytkownicy[i].haslo = haslo;
+            zapiszHasloDoPliku(uzytkownicy, iloscUzytkownikow);
+            cout << endl << "Has\210o zosta\210o zmienione!" << endl;
+            Sleep(2000);
+        }
+    }
+}
+
 
 void wyswietlMenuGlowne() {
     system("cls");
@@ -434,7 +510,8 @@ void wyswietlMenuGlowne() {
     cout << "4. Wyszukaj po nazwisku" << endl;
     cout << "5. Usu\344 adresata" << endl;
     cout << "6. Edytuj adresata" << endl;
-    cout << "9. Wyj\230cie" << endl;
+    cout << "7. Zmie\344 has\210o" << endl;
+    cout << "8. Wyloguj si\251" << endl;
 }
 
 
@@ -446,7 +523,7 @@ void wyswietlMenuLogowania() {
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),15);
     cout << "1. Rejestracja" << endl;
     cout << "2. Logowanie" << endl;
-    cout << "3. Zako\344cz program" << endl;
+    cout << "3. Wyj\230cie" << endl;
 }
 
 
@@ -456,6 +533,7 @@ int main() {
     char wyborLogowanie;
     int idZalogowanegoUzytkownika = 0;
     int iloscUzytkownikow = pobierzUzytkownikow(uzytkownicy);
+    int iloscKontaktow = pobierzKontakty(osoby);
 
     while(1) {
         if (idZalogowanegoUzytkownika == 0) {
@@ -465,33 +543,37 @@ int main() {
 
             if (wyborLogowanie == '1')
                 iloscUzytkownikow = rejestracja(uzytkownicy, iloscUzytkownikow);
+            else if (wyborLogowanie == '2')
+                idZalogowanegoUzytkownika = logowanie(uzytkownicy, iloscUzytkownikow);
+            else if (wyborLogowanie == '3')
+                exit(0);
         }
-    }
 
-    char wybor;
-    int iloscKontaktow = pobierzKontakty(osoby);
+        else if (idZalogowanegoUzytkownika > 0) {
+            char wybor;
+            wyswietlMenuGlowne();
+            cout << endl << "Tw\242j wyb\242r: ";
+            cin >> wybor;
 
-    while(1) {
-        wyswietlMenuGlowne();
-        cout << endl << "Tw\242j wyb\242r: ";
-        cin >> wybor;
-
-        if (wybor == '1')
-            iloscKontaktow = wprowadzanieNowychDanych(osoby, iloscKontaktow);
-        else if (wybor == '2')
-            wyswietlWszystkieKontakty(osoby, iloscKontaktow);
-        else if (wybor == '3')
-            szukajPoImieniu(osoby, iloscKontaktow);
-        else if (wybor == '4')
-            szukajPoNazwisku(osoby, iloscKontaktow);
-        else if (wybor == '5')
-            iloscKontaktow = usunKontakt(osoby, iloscKontaktow);
-        else if (wybor == '6')
-            edytujKontakt(osoby, iloscKontaktow);
-        else if (wybor == '9')
-            exit(0);
-        else
-            system("cls");
+            if (wybor == '1')
+                iloscKontaktow = wprowadzanieNowychDanych(osoby, iloscKontaktow);
+            else if (wybor == '2')
+                wyswietlWszystkieKontakty(osoby, iloscKontaktow);
+            else if (wybor == '3')
+                szukajPoImieniu(osoby, iloscKontaktow);
+            else if (wybor == '4')
+                szukajPoNazwisku(osoby, iloscKontaktow);
+            else if (wybor == '5')
+                iloscKontaktow = usunKontakt(osoby, iloscKontaktow);
+            else if (wybor == '6')
+                edytujKontakt(osoby, iloscKontaktow);
+            else if (wybor == '7')
+                zmianaHasla(uzytkownicy, iloscUzytkownikow, idZalogowanegoUzytkownika);
+            else if (wybor == '8')
+                idZalogowanegoUzytkownika = 0;
+            else
+                system("cls");
+        }
     }
     return 0;
 }
