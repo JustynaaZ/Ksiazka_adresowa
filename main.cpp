@@ -17,83 +17,139 @@ struct uzytkownik {
 };
 
 
-int pobierzKontakty(vector <kontakt> &osoby) {
+int sprawdzID (string linia) {
+    int licznikSlupkow = 0;
+    int dlugoscLinii = linia.length();
+    string id;
+    int idUzytkownika;
+
+    for (int i=0; i<dlugoscLinii; i++) {
+        if (linia[i] == '|' && licznikSlupkow == 0)
+            licznikSlupkow++;
+        else if (linia[i] != '|' && licznikSlupkow == 1)
+            id = id + linia[i];
+        else if (licznikSlupkow > 1)
+            break;
+        else
+            continue;
+    }
+    idUzytkownika = atoi(id.c_str());
+    return idUzytkownika;
+}
+
+
+int wyszukajOstatnieID() {
+    string linia, ostatniaLinia, id;
+    int ostatnieID;
+
+    fstream plik;
+    plik.open("Adresaci.txt", ios::in);
+
+    if (plik.good() == true) {
+        while(getline(plik,linia))
+            ostatniaLinia = linia;
+
+        int i=0;
+        while (ostatniaLinia[i] != '|') {
+            id = id + ostatniaLinia[i];
+            i++;
+        }
+        ostatnieID = atoi(id.c_str());
+    }
+    plik.close();
+    return ostatnieID;
+}
+
+
+int pobierzKontakty(vector <kontakt> &osoby, int idZalogowanegoUzytkownika) {
     int iloscKontaktow = 0;
-    string linia, id;
+    string linia, id, idUser;
+    int idUzytkownika;
+
     fstream plik;
     plik.open("Adresaci.txt", ios::in);
 
     if (plik.good() == true) {
         while(getline(plik,linia)) {
-            osoby.push_back(kontakt());
+            idUzytkownika = sprawdzID(linia);
             int dlugoscLinii = linia.length()-1;
-            int licznikSlupkow = 0;
 
-            for (int i=0; i<dlugoscLinii; i++) {
-                if (linia[i] == '|')
-                    licznikSlupkow++;
-                else if (linia[i] != '|' && licznikSlupkow == 0)
-                    id = id + linia[i];
-                else if (linia[i] != '|' && licznikSlupkow == 1)
-                    osoby[iloscKontaktow].imie = osoby[iloscKontaktow].imie + linia[i];
-                else if (linia[i] != '|' && licznikSlupkow == 2)
-                    osoby[iloscKontaktow].nazwisko = osoby[iloscKontaktow].nazwisko + linia[i];
-                else if (linia[i] != '|' && licznikSlupkow == 3)
-                    osoby[iloscKontaktow].telefon = osoby[iloscKontaktow].telefon + linia[i];
-                else if (linia[i] != '|' && licznikSlupkow == 4)
-                    osoby[iloscKontaktow].email = osoby[iloscKontaktow].email + linia[i];
-                else if (linia[i] != '|' && licznikSlupkow == 5)
-                    osoby[iloscKontaktow].adres = osoby[iloscKontaktow].adres + linia[i];
+            if (idUzytkownika == idZalogowanegoUzytkownika) {
+                osoby.push_back(kontakt());
+                int licznikSlupkow = 0;
+
+                for (int i=0; i<dlugoscLinii; i++) {
+                    if (linia[i] == '|')
+                        licznikSlupkow++;
+                    else if (linia[i] != '|' && licznikSlupkow == 0)
+                        id = id + linia[i];
+                    else if (linia[i] != '|' && licznikSlupkow == 1)
+                        continue;
+                    else if (linia[i] != '|' && licznikSlupkow == 2)
+                        osoby[iloscKontaktow].imie = osoby[iloscKontaktow].imie + linia[i];
+                    else if (linia[i] != '|' && licznikSlupkow == 3)
+                        osoby[iloscKontaktow].nazwisko = osoby[iloscKontaktow].nazwisko + linia[i];
+                    else if (linia[i] != '|' && licznikSlupkow == 4)
+                        osoby[iloscKontaktow].telefon = osoby[iloscKontaktow].telefon + linia[i];
+                    else if (linia[i] != '|' && licznikSlupkow == 5)
+                        osoby[iloscKontaktow].email = osoby[iloscKontaktow].email + linia[i];
+                    else if (linia[i] != '|' && licznikSlupkow == 6)
+                        osoby[iloscKontaktow].adres = osoby[iloscKontaktow].adres + linia[i];
+                }
+                osoby[iloscKontaktow].id = atoi(id.c_str());
+                id = "";
+                iloscKontaktow++;
             }
-            osoby[iloscKontaktow].id = atoi(id.c_str());
-            id = "";
-            iloscKontaktow++;
         }
+        plik.close();
     }
-    plik.close();
     return iloscKontaktow;
 }
 
 
-int wprowadzanieNowychDanych(vector <kontakt> &osoby, int iloscKontaktow) {
+int wprowadzanieNowychDanych(vector <kontakt> &osoby, int iloscKontaktowUzytkownika, int lacznaIloscKontaktowWPliku, int idZalogowanegoUzytkownika) {
     system("cls");
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),14);
     cout << endl << "  *** WPROWADZANIE NOWEGO ADRESATA ***" << endl;
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),15);
-    osoby.push_back(kontakt());
-    if (iloscKontaktow == 0)
-        osoby[0].id = 1;
-    else
-        osoby[iloscKontaktow].id = osoby[iloscKontaktow-1].id + 1;
 
+    int ostatnieIDwPliku;
+    osoby.push_back(kontakt());
+    if (lacznaIloscKontaktowWPliku == 0)
+        osoby[0].id = 1;
+    else {
+        ostatnieIDwPliku = wyszukajOstatnieID();
+        osoby[iloscKontaktowUzytkownika].id = ostatnieIDwPliku + 1;
+    }
     cout << endl << "Imi\251: ";
     cin.sync();
-    getline(cin, osoby[iloscKontaktow].imie);
+    getline(cin, osoby[iloscKontaktowUzytkownika].imie);
     cout << "Nazwisko: ";
     cin.sync();
-    getline(cin, osoby[iloscKontaktow].nazwisko);
+    getline(cin, osoby[iloscKontaktowUzytkownika].nazwisko);
     cout << "Nrumer telefonu: ";
     cin.sync();
-    getline(cin, osoby[iloscKontaktow].telefon);
+    getline(cin, osoby[iloscKontaktowUzytkownika].telefon);
     cout << "E-mail: ";
     cin.sync();
-    getline(cin, osoby[iloscKontaktow].email);
+    getline(cin, osoby[iloscKontaktowUzytkownika].email);
     cout << "Adres: ";
     cin.sync();
-    getline(cin, osoby[iloscKontaktow].adres);
+    getline(cin, osoby[iloscKontaktowUzytkownika].adres);
 
     fstream plik;
     plik.open("Adresaci.txt", ios::out | ios::app);
 
     if (plik.good() == true) {
-        plik << osoby[iloscKontaktow].id << "|";
-        plik << osoby[iloscKontaktow].imie << "|";
-        plik << osoby[iloscKontaktow].nazwisko << "|";
-        plik << osoby[iloscKontaktow].telefon << "|";
-        plik << osoby[iloscKontaktow].email << "|";
-        plik << osoby[iloscKontaktow].adres << "|" << endl;
+        plik << osoby[iloscKontaktowUzytkownika].id << "|";
+        plik << idZalogowanegoUzytkownika << "|";
+        plik << osoby[iloscKontaktowUzytkownika].imie << "|";
+        plik << osoby[iloscKontaktowUzytkownika].nazwisko << "|";
+        plik << osoby[iloscKontaktowUzytkownika].telefon << "|";
+        plik << osoby[iloscKontaktowUzytkownika].email << "|";
+        plik << osoby[iloscKontaktowUzytkownika].adres << "|" << endl;
 
-        iloscKontaktow++;
+        iloscKontaktowUzytkownika++;
         cout << endl << "Nowy kontakt zapisano poprawnie!" << endl;
         plik.close();
 
@@ -102,7 +158,7 @@ int wprowadzanieNowychDanych(vector <kontakt> &osoby, int iloscKontaktow) {
 
     Sleep(2000);
     system("cls");
-    return iloscKontaktow;
+    return iloscKontaktowUzytkownika;
 }
 
 
@@ -189,21 +245,92 @@ void szukajPoNazwisku(vector <kontakt> &osoby, int iloscKontaktow) {
 }
 
 
-void zapiszDoPlikuTekstowego (vector <kontakt> &osoby, int iloscKontaktow) {
-    DeleteFile("Adresaci.txt");
-    fstream plik;
+int odczytIDzPliku (string linia) {
+    string id = "";
+    int IDzPliku = 0;
+    int i=0;
+    while (linia[i] != '|') {
+        id = id + linia[i];
+        i++;
+    }
+    IDzPliku = atoi(id.c_str());
+    return IDzPliku;
+}
 
-    plik.open("Adresaci.txt", ios::out | ios::app);
-    if (plik.good() == true) {
-        for (int i=0; i<iloscKontaktow; i++) {
-            plik << osoby[i].id << "|";
-            plik << osoby[i].imie << "|";
-            plik << osoby[i].nazwisko << "|";
-            plik << osoby[i].telefon << "|";
-            plik << osoby[i].email << "|";
-            plik << osoby[i].adres << "|" << endl;
+
+void zapiszDoPlikuTekstowego (vector <kontakt> &osoby, int IDdoEdytowania, int iloscKontaktow, int idZalogowanegoUzytkownika) {
+    fstream plik, plikTymczas;
+    plik.open("Adresaci.txt", ios::in);
+    plikTymczas.open("Adresaci_tymczasowy.txt", ios::out | ios::app);
+    string linia;
+    int IDzPliku;
+
+    if (plik.good() == true && plikTymczas.good() == true) {
+        while(getline(plik,linia)) {
+            IDzPliku = odczytIDzPliku (linia);
+
+            if (IDzPliku != IDdoEdytowania) {
+                plikTymczas << linia << endl;
+                continue;
+            } else if (IDzPliku == IDdoEdytowania) {
+                for(int i=0; i<iloscKontaktow; i++) {
+                    if (osoby[i].id == IDdoEdytowania) {
+                        plikTymczas << osoby[i].id << "|";
+                        plikTymczas << idZalogowanegoUzytkownika << "|";
+                        plikTymczas << osoby[i].imie << "|";
+                        plikTymczas << osoby[i].nazwisko << "|";
+                        plikTymczas << osoby[i].telefon << "|";
+                        plikTymczas << osoby[i].email << "|";
+                        plikTymczas << osoby[i].adres << "|" << endl;
+                    } else
+                        continue;
+                }
+            }
         }
         plik.close();
+        plikTymczas.close();
+        DeleteFile("Adresaci.txt");
+
+        if (rename ("Adresaci_tymczasowy.txt", "Adresaci.txt") != 0) {
+            cout << "Edycja adresata nie powiod\210a si\251" << endl;
+            Sleep(2000);
+        }
+        else {
+            cout << endl << "Nowe dane zosta\210y zapisane!";
+            Sleep(2000);
+        }
+    }
+}
+
+
+void zapiszUsuniecieDoPliku (vector <kontakt> &osoby, int iloscKontaktow, int idDoUsuniecia) {
+    fstream plik, plikTymczas;
+    plik.open("Adresaci.txt", ios::in);
+    plikTymczas.open("Adresaci_tymczasowy.txt", ios::out | ios::app);
+    string linia;
+    int IDzPliku;
+
+    if (plik.good() == true && plikTymczas.good() == true) {
+        while(getline(plik,linia)) {
+            IDzPliku = odczytIDzPliku (linia);
+
+            if (IDzPliku != idDoUsuniecia) {
+                plikTymczas << linia << endl;
+            } else if (IDzPliku == idDoUsuniecia)
+                continue;
+        }
+    }
+    plik.close();
+    plikTymczas.close();
+    DeleteFile("Adresaci.txt");
+
+    if (rename ("Adresaci_tymczasowy.txt", "Adresaci.txt") != 0) {
+        cout << "Adresat NIE zosta\210 poprawnie usuni\251ty!" << endl;
+        Sleep(2000);
+    }
+    else{
+        cout << "Adresat zosta\210 poprawnie usuni\251ty!" << endl;
+        Sleep(2000);
     }
 }
 
@@ -235,10 +362,7 @@ int usunKontakt(vector <kontakt> &osoby, int iloscKontaktow) {
                 itr = osoby.begin() + licznikOsob;
                 osoby.erase(itr);
                 iloscKontaktow--;
-                zapiszDoPlikuTekstowego (osoby, iloscKontaktow);
-                cout << endl << "Adresat zosta\210 poprawnie usuni\251ty!" << endl << endl;
-                Sleep(2000);
-                break;
+                zapiszUsuniecieDoPliku (osoby, iloscKontaktow, wybraneID);
             } else if (wybor == 'n') {
                 system("cls");
                 break;
@@ -257,7 +381,7 @@ int usunKontakt(vector <kontakt> &osoby, int iloscKontaktow) {
 }
 
 
-void edytujKontakt(vector <kontakt> &osoby, int iloscKontaktow) {
+void edytujKontakt(vector <kontakt> &osoby, int iloscKontaktow, int idZalogowanegoUzytkownika) {
     system("cls");
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),14);
     cout << endl << "  *** EDYTOWANIE ADRESATA ***" << endl;
@@ -320,9 +444,7 @@ void edytujKontakt(vector <kontakt> &osoby, int iloscKontaktow) {
                     cin >> adres;
                     osoby[i].adres = adres;
                 }
-                zapiszDoPlikuTekstowego (osoby, iloscKontaktow);
-                cout << endl << "Nowe dane zosta\210y zapisane!";
-                Sleep(2000);
+                zapiszDoPlikuTekstowego (osoby, wybraneID, iloscKontaktow, idZalogowanegoUzytkownika);
                 break;
             }
         } else {
@@ -386,7 +508,7 @@ int rejestracja (vector <uzytkownik> &uzytkownicy, int iloscUzytkownikow) {
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),11);
     cout << "Teraz mo\276esz si\251 ZALOGOWA\217" << endl << endl;
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),15);
-    system("pause");
+    Sleep(1500);
 
     return iloscUzytkownikow;
 }
@@ -477,6 +599,22 @@ void zapiszHasloDoPliku (vector <uzytkownik> &uzytkownicy, int iloscUzytkownikow
 }
 
 
+int policzKontakty () {
+    string linia;
+    fstream plik;
+    int licznikKontaktow = 0;
+
+    plik.open("Adresaci.txt", ios::in);
+
+    if (plik.good() == true) {
+        while(getline(plik,linia)) {
+            licznikKontaktow++;
+        }
+    }
+    return licznikKontaktow;
+}
+
+
 void zmianaHasla(vector <uzytkownik> &uzytkownicy, int iloscUzytkownikow, int idZalogowanegoUzytkownika) {
     system("cls");
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),14);
@@ -511,7 +649,7 @@ void wyswietlMenuGlowne() {
     cout << "5. Usu\344 adresata" << endl;
     cout << "6. Edytuj adresata" << endl;
     cout << "7. Zmie\344 has\210o" << endl;
-    cout << "8. Wyloguj si\251" << endl;
+    cout << "8. Wyloguj" << endl;
 }
 
 
@@ -532,8 +670,8 @@ int main() {
     vector <uzytkownik> uzytkownicy;
     char wyborLogowanie;
     int idZalogowanegoUzytkownika = 0;
+    int lacznaIloscKontaktowWPliku, iloscKontaktowUzytkownika;
     int iloscUzytkownikow = pobierzUzytkownikow(uzytkownicy);
-    int iloscKontaktow = pobierzKontakty(osoby);
 
     while(1) {
         if (idZalogowanegoUzytkownika == 0) {
@@ -543,35 +681,38 @@ int main() {
 
             if (wyborLogowanie == '1')
                 iloscUzytkownikow = rejestracja(uzytkownicy, iloscUzytkownikow);
-            else if (wyborLogowanie == '2')
-                idZalogowanegoUzytkownika = logowanie(uzytkownicy, iloscUzytkownikow);
-            else if (wyborLogowanie == '3')
-                exit(0);
-        }
 
-        else if (idZalogowanegoUzytkownika > 0) {
+            else if (wyborLogowanie == '2') {
+                idZalogowanegoUzytkownika = logowanie(uzytkownicy, iloscUzytkownikow);
+                lacznaIloscKontaktowWPliku = policzKontakty();
+                iloscKontaktowUzytkownika = pobierzKontakty(osoby, idZalogowanegoUzytkownika);
+            } else if (wyborLogowanie == '3')
+                exit(0);
+        } else if (idZalogowanegoUzytkownika != 0) {
             char wybor;
             wyswietlMenuGlowne();
             cout << endl << "Tw\242j wyb\242r: ";
             cin >> wybor;
 
-            if (wybor == '1')
-                iloscKontaktow = wprowadzanieNowychDanych(osoby, iloscKontaktow);
-            else if (wybor == '2')
-                wyswietlWszystkieKontakty(osoby, iloscKontaktow);
+            if (wybor == '1') {
+                iloscKontaktowUzytkownika = wprowadzanieNowychDanych(osoby, iloscKontaktowUzytkownika, lacznaIloscKontaktowWPliku, idZalogowanegoUzytkownika);
+                lacznaIloscKontaktowWPliku++;
+            } else if (wybor == '2')
+                wyswietlWszystkieKontakty(osoby, iloscKontaktowUzytkownika);
             else if (wybor == '3')
-                szukajPoImieniu(osoby, iloscKontaktow);
+                szukajPoImieniu(osoby, iloscKontaktowUzytkownika);
             else if (wybor == '4')
-                szukajPoNazwisku(osoby, iloscKontaktow);
+                szukajPoNazwisku(osoby, iloscKontaktowUzytkownika);
             else if (wybor == '5')
-                iloscKontaktow = usunKontakt(osoby, iloscKontaktow);
+                iloscKontaktowUzytkownika = usunKontakt(osoby, iloscKontaktowUzytkownika);
             else if (wybor == '6')
-                edytujKontakt(osoby, iloscKontaktow);
+                edytujKontakt(osoby, iloscKontaktowUzytkownika, idZalogowanegoUzytkownika);
             else if (wybor == '7')
                 zmianaHasla(uzytkownicy, iloscUzytkownikow, idZalogowanegoUzytkownika);
-            else if (wybor == '8')
+            else if (wybor == '8') {
                 idZalogowanegoUzytkownika = 0;
-            else
+                osoby.clear();
+            } else
                 system("cls");
         }
     }
